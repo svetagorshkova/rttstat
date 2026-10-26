@@ -47,12 +47,6 @@
   .note { color:var(--muted); font-size:13px; margin-top:8px; }
   footer { color:var(--muted); font-size:13px; padding:20px 0 40px; }
   .hide { display:none; }
-  .frm { display:grid; gap:8px 12px; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); margin-bottom:10px; }
-  .frm label { display:flex; flex-direction:column; font-size:13px; color:var(--muted); gap:3px; }
-  .frm input, .frm select { margin:0; width:100%; font:inherit; padding:6px 8px; border:1px solid var(--line);
-         border-radius:6px; background:var(--card); color:var(--text); }
-  .frm h3 { grid-column:1/-1; font-size:14px; margin:6px 0 0; color:var(--text); }
-  .btnp { border:0; background:var(--accent); color:#fff; padding:8px 16px; border-radius:6px; cursor:pointer; font:inherit; margin-top:6px; }
 </style>
 </head>
 <body>
@@ -118,17 +112,6 @@
     <div class="scroll" id="history"></div>
   </section>
 
-  <section class="card" id="addCard">
-    <h2>Добавить матч</h2>
-    <div class="note" style="margin:0 0 10px">Заполните поля, нажмите «Сформировать» и вставьте полученную строку в <b>data.js</b> (подсказка, куда именно, появится под полем). Страница сама ничего не сохраняет.</div>
-    <div class="tabs" id="addTabs"></div>
-    <form id="addForm" autocomplete="off"></form>
-    <div id="addOut" class="hide">
-      <div class="note" id="addWhere" style="margin:10px 0 6px"></div>
-      <textarea id="addText" rows="8" style="width:100%;font:13px/1.4 ui-monospace,Menlo,Consolas,monospace;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:8px" readonly></textarea>
-      <button type="button" id="addCopy" class="btnp">Скопировать</button>
-    </div>
-  </section>
 
   <footer id="foot"></footer>
 </div>
@@ -327,6 +310,8 @@
   $("history").innerHTML = `<table><thead><tr><th class="num">№</th><th>Турнир</th><th>Город</th><th>Дата</th><th>Кат.</th><th>Группа</th><th>Место</th><th class="num">Очки</th></tr></thead><tbody>` +
     DATA.history.map((r,i) => `<tr><td class="num">${i+1}</td><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${r[2]}</td><td>${esc(r[3])}</td><td>${esc(r[4])}</td><td>${esc(r[5])}</td><td class="num">${r[6]}</td></tr>`).join("") + "</tbody></table>";
 
+  $("foot").textContent = "Личный архив родителей. Данные скопированы из публичных результатов РТТ (через RTTStat) и пополняются вручную в файле data.js.";
+})();
 </script>
 </body>
 </html>
