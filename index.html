@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Архив игрока РТТ</title>
+<style>
+  :root {
+    --bg:#f6f7f9; --card:#fff; --text:#1b1f24; --muted:#667085; --line:#e3e6ea;
+    --accent:#1f6f4a; --win:#1f7a46; --loss:#b3382c; --head:#eef1f4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#14171a; --card:#1c2024; --text:#e8eaed; --muted:#9aa3ad; --line:#2c3238;
+            --accent:#58c48a; --win:#58c48a; --loss:#ef7b70; --head:#242a30; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+         font:15px/1.45 -apple-system,"Segoe UI",Roboto,Arial,sans-serif; }
+  .wrap { max-width:1100px; margin:0 auto; padding:16px; }
+  h1 { font-size:24px; margin:8px 0 4px; }
+  h2 { font-size:18px; margin:0 0 12px; }
+  .sub { color:var(--muted); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin:14px 0; }
+  .grid { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); }
+  .stat { background:var(--head); border-radius:8px; padding:10px 12px; }
+  .stat b { display:block; font-size:22px; }
+  .stat span { color:var(--muted); font-size:13px; }
+  .two { display:grid; gap:14px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); }
+  a { color:var(--accent); }
+  .links a { margin-right:14px; }
+  .tabs { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
+  .tabs button { border:1px solid var(--line); background:var(--head); color:var(--text);
+                 padding:6px 12px; border-radius:6px; cursor:pointer; font:inherit; }
+  .tabs button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .scroll { overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; font-size:14px; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { background:var(--head); position:sticky; top:0; white-space:nowrap; }
+  td.num, th.num { text-align:right; white-space:nowrap; }
+  .W { color:var(--win); font-weight:600; } .L { color:var(--loss); font-weight:600; }
+  tr.tour td { background:var(--head); font-weight:600; }
+  tr.counted td:first-child { border-left:3px solid var(--accent); }
+  input[type=search], select { font:inherit; padding:6px 8px; border:1px solid var(--line);
+         border-radius:6px; background:var(--card); color:var(--text); margin:0 8px 8px 0; }
+  svg text { fill:var(--muted); font-size:11px; }
+  .note { color:var(--muted); font-size:13px; margin-top:8px; }
+  footer { color:var(--muted); font-size:13px; padding:20px 0 40px; }
+  .hide { display:none; }
+  .frm { display:grid; gap:8px 12px; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); margin-bottom:10px; }
+  .frm label { display:flex; flex-direction:column; font-size:13px; color:var(--muted); gap:3px; }
+  .frm input, .frm select { margin:0; width:100%; font:inherit; padding:6px 8px; border:1px solid var(--line);
+         border-radius:6px; background:var(--card); color:var(--text); }
+  .frm h3 { grid-column:1/-1; font-size:14px; margin:6px 0 0; color:var(--text); }
+  .btnp { border:0; background:var(--accent); color:#fff; padding:8px 16px; border-radius:6px; cursor:pointer; font:inherit; margin-top:6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1 id="pname"></h1>
+    <div class="sub" id="pmeta"></div>
+    <div class="links" id="plinks" style="margin-top:6px"></div>
+  </header>
+
+  <section class="card">
+    <h2>Сводка</h2>
+    <div class="grid" id="summary"></div>
+    <div class="note" id="summaryNote"></div>
+  </section>
+
+  <section class="two">
+    <div class="card"><h2>Одиночный разряд</h2><div class="grid" id="sStats"></div><div id="sForm" style="margin-top:12px"></div><div id="sPro"></div></div>
+    <div class="card"><h2>Парный разряд</h2><div class="grid" id="dStats"></div><div id="dForm" style="margin-top:12px"></div><div id="dPro"></div></div>
+  </section>
+
+  <section class="card hide" id="pendingCard">
+    <h2>Сыграно, но ещё не учтено в рейтинге</h2>
+    <div class="scroll" id="pending"></div>
+  </section>
+
+  <section class="card">
+    <h2>Динамика рейтинга</h2>
+    <div class="tabs" id="chartTabs"></div>
+    <div id="chart"></div>
+    <div class="note">Место в рейтинге: линия вверх значит лучше. Данные по месяцам; смена возрастной группы видна по подписям.</div>
+    <details style="margin-top:10px"><summary>Таблица по месяцам</summary><div class="scroll" id="ratingTable"></div></details>
+  </section>
+
+  <section class="card">
+    <h2>Матчи</h2>
+    <div class="tabs" id="matchTabs"></div>
+    <div id="matchFilters"></div>
+    <div class="scroll" id="matches"></div>
+  </section>
+
+  <section class="card">
+    <h2>Соперники (личные встречи)</h2>
+    <div class="scroll" id="h2h"></div>
+    <div class="note">Одиночный и парный разряд вместе: в паре соперником считается каждый из двух игроков.</div>
+  </section>
+
+  <section class="card">
+    <h2>Результаты по категориям турниров</h2>
+    <div class="scroll" id="byCat"></div>
+  </section>
+
+  <section class="card">
+    <h2>Турниры за последний год</h2>
+    <div class="tabs" id="tourTabs"></div>
+    <div class="scroll" id="tours"></div>
+    <div class="note">Левая зелёная полоска означает, что турнир отмечен в источнике признаком зачёта (значение в колонке «Зачёт»).</div>
+  </section>
+
+  <section class="card">
+    <h2>История турниров</h2>
+    <div class="scroll" id="history"></div>
+  </section>
+
+  <section class="card" id="addCard">
+    <h2>Добавить матч</h2>
+    <div class="note" style="margin:0 0 10px">Заполните поля, нажмите «Сформировать» и вставьте полученную строку в <b>data.js</b> (подсказка, куда именно, появится под полем). Страница сама ничего не сохраняет.</div>
+    <div class="tabs" id="addTabs"></div>
+    <form id="addForm" autocomplete="off"></form>
+    <div id="addOut" class="hide">
+      <div class="note" id="addWhere" style="margin:10px 0 6px"></div>
+      <textarea id="addText" rows="8" style="width:100%;font:13px/1.4 ui-monospace,Menlo,Consolas,monospace;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:8px" readonly></textarea>
+      <button type="button" id="addCopy" class="btnp">Скопировать</button>
+    </div>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+
+<script src="data.js"></script>
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const d2n = s => { const [d,m,y] = s.split("."); return +y*10000 + +m*100 + +d; };
+  const playerLink = (name, id) => id ? `<a href="https://rttstat.ru/player/${id}" target="_blank" rel="noopener">${esc(name)}</a>` : esc(name);
+  const tourLink = (name, id) => id ? `<a href="https://rttstat.ru/tour/${id}" target="_blank" rel="noopener">${esc(name)}</a>` : esc(name);
+  const P = DATA.player;
+
+  // ---------- Шапка ----------
+  $("pname").textContent = P.name;
+  $("pmeta").textContent = `РНИ ${P.rni} · ${P.city} · ${P.age} лет · группа ${P.group} · рейтинг на ${P.updated}, матчи по ${P.matchesThrough || P.updated}`;
+  $("plinks").innerHTML =
+    `<a href="${P.links.rtt}" target="_blank" rel="noopener">Страница на РТТ →</a>` +
+    `<a href="${P.links.rttstat}" target="_blank" rel="noopener">RTTStat →</a>` +
+    `<a href="${P.links.te}" target="_blank" rel="noopener">Tennis Europe →</a>`;
+
+  // ---------- Расчёты ----------
+  const sMatches = [];
+  DATA.singles.forEach(t => t.matches.forEach(m => sMatches.push({
+    tour:t, opp:m[0], oppId:m[1], res:m[2], score:m[3], oppPts:m[4], oppAge:m[5], oppCity:m[6], date:m[7]
+  })));
+  const dMatches = DATA.doubles.slice();
+  const byDateDesc = (a,b) => d2n(b.date) - d2n(a.date);
+  sMatches.sort(byDateDesc); dMatches.sort(byDateDesc);
+
+  const wl = arr => { const w = arr.filter(m => m.res === "W").length; return { w, l: arr.length - w, n: arr.length }; };
+  const pct = o => o.n ? Math.round(100 * o.w / o.n) + "%" : "—";
+  const S = wl(sMatches), D = wl(dMatches);
+  const first = [...sMatches, ...dMatches].map(m => d2n(m.date)).sort((a,b)=>a-b)[0];
+  const last = [...sMatches, ...dMatches].map(m => d2n(m.date)).sort((a,b)=>b-a)[0];
+  const fmt = n => { const s = String(n); return s.slice(6,8)+"."+s.slice(4,6)+"."+s.slice(0,4); };
+
+  const stat = (v, l) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`;
+  $("summary").innerHTML =
+    stat(`${S.w}–${S.l}`, `одиночные, побед ${pct(S)}`) +
+    stat(`${D.w}–${D.l}`, `парные, побед ${pct(D)}`) +
+    stat(S.n + D.n, "матчей в архиве") +
+    stat(P.singles.rank, "место в рейтинге (одиночный)") +
+    stat(P.singles.pts, "очки (одиночный)");
+  $("summaryNote").textContent = `Матчи в архиве: с ${fmt(first)} по ${fmt(last)}. Рейтинг и очки на ${P.updated}.`;
+
+  const sd = (o, rows) => rows.map(([v,l]) => stat(v,l)).join("");
+  $("sStats").innerHTML = sd(null, [
+    [P.singles.pts, "очки"], [P.singles.rank, "место (до 15)"], [P.singles.rank17, "место (до 17)"],
+    [P.singles.rank19, "место (до 19)"], [P.singles.rank19plus, "место (19+)"],
+    [`${P.singles.toursCounted} из ${P.singles.toursYear}`, "зачтено турниров"],
+    ...(P.singles.extra || [])
+  ]);
+  $("dStats").innerHTML = sd(null, [
+    [P.doubles.pts, "очки"], [P.doubles.rank, "место (до 15)"], [P.doubles.rank17, "место (до 17)"],
+    [P.doubles.rank19, "место (до 19)"], [P.doubles.rank19plus, "место (19+)"],
+    [`${P.doubles.toursCounted} из ${P.doubles.toursYear}`, "зачтено турниров"],
+    ...(P.doubles.extra || [])
+  ]);
+  // форма: последние 10 матчей, слева старые, справа новые (как на RTTStat)
+  const formHtml = arr => {
+    const last = arr.slice(0, 10).reverse();
+    return `<div class="sub" style="margin-bottom:4px">Форма (последние ${last.length} матчей, справа самый свежий)</div>` +
+      last.map(m => `<span class="${m.res}" style="display:inline-block;width:26px;text-align:center;margin-right:3px;border:1px solid var(--line);border-radius:4px;padding:1px 0" title="${esc(m.date)}">${m.res}</span>`).join("");
+  };
+  $("sForm").innerHTML = formHtml(sMatches);
+  $("dForm").innerHTML = formHtml(dMatches);
+  const proHtml = o => (o.pro && o.pro.length) ?
+    `<details style="margin-top:10px"><summary>Подробнее (данные RTTStat на ${P.updated})</summary><table><tbody>` +
+    o.pro.map(([l,v]) => `<tr><td>${esc(l)}</td><td>${esc(v)}</td></tr>`).join("") + "</tbody></table></details>" : "";
+  $("sPro").innerHTML = proHtml(P.singles);
+  $("dPro").innerHTML = proHtml(P.doubles);
+  if ((DATA.pending || []).length) {
+    $("pendingCard").classList.remove("hide");
+    $("pending").innerHTML = `<table><thead><tr><th>Турнир</th><th>Город</th><th>Группа</th><th>Кат.</th><th>Даты матчей</th><th>Разряд</th></tr></thead><tbody>` +
+      DATA.pending.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join("")}</tr>`).join("") + "</tbody></table>" +
+      `<div class="note">Матчи этих турниров уже внесены в таблицы выше, а очки и места появятся в рейтинге после обновления.</div>`;
+  }
+
+  // ---------- История рейтинга ----------
+  const mnames = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
+  const points = []; // {label, place, pts, group}
+  DATA.ratingHistory.slice().sort((a,b)=>a.year-b.year).forEach(y => {
+    y.vals.forEach((v,i) => points.push({
+      year:y.year, month:y.startMonth+i, label: mnames[y.startMonth+i-1]+" "+String(y.year).slice(2),
+      place:v[0], pts:v[1], group:y.group
+    }));
+  });
+  let chartMode = "pts";
+  function drawChart() {
+    const W = 1000, H = 300, L = 50, R = 20, T = 20, B = 40;
+    const vals = points.map(p => p[chartMode === "pts" ? "pts" : "place"]);
+    const min = Math.min(...vals), max = Math.max(...vals);
+    const inv = chartMode === "place";                // для места меньше = лучше, рисуем вверх
+    const x = i => L + (W - L - R) * i / Math.max(1, points.length - 1);
+    const y = v => { const t = (v - min) / Math.max(1, max - min); return T + (H - T - B) * (inv ? t : 1 - t); };
+    let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="График рейтинга">`;
+    for (let k = 0; k <= 4; k++) {
+      const v = min + (max - min) * k / 4; const yy = y(v);
+      svg += `<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" stroke="var(--line)"/><text x="${L-6}" y="${yy+4}" text-anchor="end">${Math.round(v)}</text>`;
+    }
+    let path = points.map((p,i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(vals[i]).toFixed(1)).join(" ");
+    svg += `<path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>`;
+    points.forEach((p,i) => {
+      svg += `<circle cx="${x(i)}" cy="${y(vals[i])}" r="3.5" fill="var(--accent)"><title>${p.label}: место ${p.place}, очки ${p.pts} (${p.group})</title></circle>`;
+      if (i % 3 === 0 || i === points.length - 1) svg += `<text x="${x(i)}" y="${H-18}" text-anchor="middle">${p.label}</text>`;
+    });
+    svg += "</svg>";
+    $("chart").innerHTML = svg;
+  }
+  function chartTabs() {
+    $("chartTabs").innerHTML = ["pts:Очки","place:Место"].map(s => {
+      const [k,l] = s.split(":"); return `<button data-k="${k}" class="${k===chartMode?"on":""}">${l}</button>`;
+    }).join("");
+    $("chartTabs").querySelectorAll("button").forEach(b => b.onclick = () => { chartMode = b.dataset.k; chartTabs(); drawChart(); });
+  }
+  chartTabs(); drawChart();
+  $("ratingTable").innerHTML = `<table><thead><tr><th>Месяц</th><th>Группа</th><th class="num">Место</th><th class="num">Очки</th></tr></thead><tbody>` +
+    points.slice().reverse().map(p => `<tr><td>${p.label}</td><td>${esc(p.group)}</td><td class="num">${p.place}</td><td class="num">${p.pts}</td></tr>`).join("") + "</tbody></table>";
+
+  // ---------- Матчи ----------
+  let mTab = "s", fText = "", fRes = "", fYear = "";
+  function matchRows() {
+    const f = m => (!fRes || m.res === fRes) && (!fYear || m.date.endsWith(fYear)) &&
+      (!fText || (m.opp || (m.opp1 + " " + m.opp2) + " " + m.partner).toLowerCase().includes(fText) ||
+                 ((m.tour.name || "").toLowerCase().includes(fText)));
+    if (mTab === "s") {
+      const rows = sMatches.filter(f);
+      let html = `<table><thead><tr><th>Дата</th><th>Соперник</th><th>Результат</th><th>Счёт</th><th class="num">Очки соп.</th><th>Возр.</th><th>Город</th><th>Турнир</th></tr></thead><tbody>`;
+      rows.forEach(m => html += `<tr><td>${m.date}</td><td>${playerLink(m.opp,m.oppId)}</td><td class="${m.res}">${m.res==="W"?"победа":"поражение"}</td><td>${esc(m.score)}</td><td class="num">${m.oppPts}</td><td>${m.oppAge}</td><td>${esc(m.oppCity)}</td><td>${tourLink(m.tour.name,m.tour.id)}<br><span class="sub">${esc(m.tour.city)}, ${esc(m.tour.group)}, ${esc(m.tour.cat)}</span></td></tr>`);
+      return html + "</tbody></table>" + (rows.length ? "" : `<div class="note">Ничего не найдено.</div>`);
+    }
+    const rows = dMatches.filter(f);
+    let html = `<table><thead><tr><th>Дата</th><th>Партнёр</th><th>Соперники</th><th>Результат</th><th>Счёт</th><th class="num">Очки соп.</th><th>Турнир</th></tr></thead><tbody>`;
+    rows.forEach(m => html += `<tr><td>${m.date}</td><td>${playerLink(m.partner,m.partnerId)} <span class="sub">(${m.partnerPts})</span></td><td>${playerLink(m.opp1,m.opp1Id)}<br>${playerLink(m.opp2,m.opp2Id)}</td><td class="${m.res}">${m.res==="W"?"победа":"поражение"}</td><td>${esc(m.score)}</td><td class="num">${m.pts1}<br>${m.pts2}</td><td>${tourLink(m.tour.name,m.tour.id)}<br><span class="sub">${esc(m.tour.city)}, ${esc(m.tour.group)}, ${esc(m.tour.cat)}</span></td></tr>`);
+    return html + "</tbody></table>" + (rows.length ? "" : `<div class="note">Ничего не найдено.</div>`);
+  }
+  function renderMatches() {
+    $("matchTabs").innerHTML = [["s",`Одиночные (${sMatches.length})`],["d",`Парные (${dMatches.length})`]]
+      .map(([k,l]) => `<button data-k="${k}" class="${k===mTab?"on":""}">${l}</button>`).join("");
+    $("matchTabs").querySelectorAll("button").forEach(b => b.onclick = () => { mTab = b.dataset.k; renderMatches(); });
+    const years = [...new Set([...sMatches, ...dMatches].map(m => m.date.slice(6)))].sort().reverse();
+    $("matchFilters").innerHTML =
+      `<input type="search" id="fText" placeholder="Поиск: соперник, турнир" value="${esc(fText)}">` +
+      `<select id="fRes"><option value="">Все результаты</option><option value="W"${fRes==="W"?" selected":""}>Победы</option><option value="L"${fRes==="L"?" selected":""}>Поражения</option></select>` +
+      `<select id="fYear"><option value="">Все годы</option>${years.map(y=>`<option${fYear===y?" selected":""}>${y}</option>`).join("")}</select>`;
+    $("fText").oninput = e => { fText = e.target.value.toLowerCase(); $("matches").innerHTML = matchRows(); };
+    $("fRes").onchange = e => { fRes = e.target.value; $("matches").innerHTML = matchRows(); };
+    $("fYear").onchange = e => { fYear = e.target.value; $("matches").innerHTML = matchRows(); };
+    $("matches").innerHTML = matchRows();
+  }
+  renderMatches();
+
+  // ---------- Личные встречи ----------
+  const h = {};
+  const add = (name, id, res, date, kind) => {
+    const k = id || name; const o = h[k] || (h[k] = { name, id, w:0, l:0, last:"" , kinds:new Set() });
+    res === "W" ? o.w++ : o.l++; o.kinds.add(kind);
+    if (!o.last || d2n(date) > d2n(o.last)) o.last = date;
+  };
+  sMatches.forEach(m => add(m.opp, m.oppId, m.res, m.date, "одиночный"));
+  dMatches.forEach(m => { add(m.opp1, m.opp1Id, m.res, m.date, "парный"); add(m.opp2, m.opp2Id, m.res, m.date, "парный"); });
+  const hRows = Object.values(h).sort((a,b) => (b.w+b.l) - (a.w+a.l) || d2n(b.last) - d2n(a.last));
+  $("h2h").innerHTML = `<table><thead><tr><th>Соперник</th><th class="num">Встреч</th><th class="num">Побед</th><th class="num">Поражений</th><th>Последняя</th><th>Разряд</th></tr></thead><tbody>` +
+    hRows.map(o => `<tr><td>${playerLink(o.name,o.id)}</td><td class="num">${o.w+o.l}</td><td class="num W">${o.w}</td><td class="num L">${o.l}</td><td>${o.last}</td><td>${[...o.kinds].join(", ")}</td></tr>`).join("") + "</tbody></table>";
+
+  // ---------- По категориям ----------
+  const cat = {};
+  [...sMatches, ...dMatches].forEach(m => {
+    const c = m.tour.cat; const o = cat[c] || (cat[c] = { w:0, l:0 }); m.res === "W" ? o.w++ : o.l++;
+  });
+  $("byCat").innerHTML = `<table><thead><tr><th>Категория турнира</th><th class="num">Матчей</th><th class="num">Побед</th><th class="num">Поражений</th><th class="num">Доля побед</th></tr></thead><tbody>` +
+    Object.entries(cat).sort((a,b) => a[0].localeCompare(b[0], "ru")).map(([c,o]) =>
+      `<tr><td>${esc(c)}</td><td class="num">${o.w+o.l}</td><td class="num W">${o.w}</td><td class="num L">${o.l}</td><td class="num">${Math.round(100*o.w/(o.w+o.l))}%</td></tr>`).join("") + "</tbody></table>";
+
+  // ---------- Турниры за год ----------
+  let tTab = "s";
+  function renderTours() {
+    $("tourTabs").innerHTML = [["s",`Одиночные (${DATA.toursYearSingles.length})`],["d",`Парные (${DATA.toursYearDoubles.length})`]]
+      .map(([k,l]) => `<button data-k="${k}" class="${k===tTab?"on":""}">${l}</button>`).join("");
+    $("tourTabs").querySelectorAll("button").forEach(b => b.onclick = () => { tTab = b.dataset.k; renderTours(); });
+    let html;
+    if (tTab === "s") {
+      html = `<table><thead><tr><th>Турнир</th><th>Город</th><th>Дата</th><th>Кат.</th><th>Зачёт</th><th>Группа</th><th class="num">Побед</th><th class="num">Ср. рейтинг побеждённых</th><th>Место</th><th class="num">Очки</th></tr></thead><tbody>` +
+        DATA.toursYearSingles.map(r => `<tr class="${r[6]?"counted":""}"><td>${tourLink(r[0],r[1])}</td><td>${esc(r[2])}</td><td>${r[4]}</td><td>${esc(r[5])}</td><td>${r[6]||""}</td><td>${esc(r[7])}</td><td class="num">${r[8]==null?"":r[8]}</td><td class="num">${r[9]==null?"":r[9]}</td><td>${esc(r[10])}</td><td class="num"><b>${r[11]}</b></td></tr>`).join("") + "</tbody></table>";
+    } else {
+      html = `<table><thead><tr><th>Турнир</th><th>Город</th><th>Тип</th><th>Дата</th><th>Кат.</th><th>Зачёт</th><th>Группа</th><th class="num">Побед</th><th>Место</th><th class="num">Очки</th></tr></thead><tbody>` +
+        DATA.toursYearDoubles.map(r => `<tr class="${r[6]?"counted":""}"><td>${tourLink(r[0],r[1])}</td><td>${esc(r[2])}</td><td>${esc(r[3])}</td><td>${r[4]}</td><td>${esc(r[5])}</td><td>${r[6]||""}</td><td>${esc(r[7])}</td><td class="num">${r[8]==null?"":r[8]}</td><td>${esc(r[9])}</td><td class="num"><b>${r[10]}</b></td></tr>`).join("") + "</tbody></table>";
+    }
+    $("tours").innerHTML = html;
+  }
+  renderTours();
+
+  // ---------- История турниров ----------
+  $("history").innerHTML = `<table><thead><tr><th class="num">№</th><th>Турнир</th><th>Город</th><th>Дата</th><th>Кат.</th><th>Группа</th><th>Место</th><th class="num">Очки</th></tr></thead><tbody>` +
+    DATA.history.map((r,i) => `<tr><td class="num">${i+1}</td><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${r[2]}</td><td>${esc(r[3])}</td><td>${esc(r[4])}</td><td>${esc(r[5])}</td><td class="num">${r[6]}</td></tr>`).join("") + "</tbody></table>";
+
+  // ---------- Форма добавления матча ----------
+  let aTab = "s";
+  const J = JSON.stringify;
+  const isoToRu = v => v ? v.split("-").reverse().join(".") : "";
+  const numOrNull = v => { v = String(v).trim(); return v === "" ? "null" : String(parseInt(v, 10)); };
+  const field = (id, label, type, extra) => `<label>${label}<input id="${id}" type="${type||"text"}" ${extra||""}></label>`;
+  const tourOptions = () => {
+    const seen = new Map();
+    DATA.singles.forEach(t => seen.set("s"+t.id, t));
+    DATA.doubles.forEach(m => seen.set("d"+m.tour.id, m.tour));
+    return [...seen.values()];
+  };
+  function renderAdd() {
+    $("addTabs").innerHTML = [["s","Одиночный матч"],["d","Парный матч"],["r","Рейтинг за месяц"]]
+      .map(([k,l]) => `<button data-k="${k}" class="${k===aTab?"on":""}">${l}</button>`).join("");
+    $("addTabs").querySelectorAll("button").forEach(b => b.onclick = () => { aTab = b.dataset.k; renderAdd(); });
+    $("addOut").classList.add("hide");
+    const tours = aTab === "s" ? DATA.singles : (() => { const u = new Map(); DATA.doubles.forEach(m => u.set(m.tour.id + "|" + m.tour.name, m.tour)); return [...u.values()]; })();
+    const tourBlock = aTab === "r" ? "" :
+      `<h3>Турнир</h3>
+       <label>Выбрать из известных<select id="fTour"><option value="">— новый турнир —</option>${tours.map((t,i)=>`<option value="${i}">${esc(t.name)} (${esc(t.city)})</option>`).join("")}</select></label>
+       <span id="newTour" style="display:contents">
+         ${field("tName","Название турнира")}${field("tId","№ турнира на РТТ","number")}${field("tCity","Город турнира")}
+         ${field("tGroup","Возрастная группа","text",'placeholder="до 15 лет"')}${field("tCat","Категория","text",'placeholder="III А"')}
+       </span>`;
+    let body = "";
+    if (aTab === "s") body = tourBlock + `<h3>Матч</h3>` +
+      field("date","Дата","date") + field("opp","Соперник (ФИО)") + field("oppId","№ соперника на РТТ","number") +
+      `<label>Результат<select id="res"><option value="W">победа</option><option value="L">поражение</option></select></label>` +
+      field("score","Счёт","text",'placeholder="6-3,6-4"') + field("oppPts","Очки соперника","number") +
+      field("oppAge","Возраст соперника","number") + field("oppCity","Город соперника");
+    if (aTab === "d") body = tourBlock + `<h3>Матч</h3>` +
+      field("date","Дата","date") + `<label>Результат<select id="res"><option value="W">победа</option><option value="L">поражение</option></select></label>` +
+      field("score","Счёт","text",'placeholder="6-3,6-4"') +
+      `<h3>Пара</h3>` + field("partner","Партнёр (ФИО)") + field("partnerId","№ партнёра","number") + field("partnerPts","Очки партнёра","number") +
+      `<h3>Соперники</h3>` + field("opp1","Соперник 1") + field("opp1Id","№ соперника 1","number") + field("pts1","Очки соперника 1","number") +
+      field("opp2","Соперник 2") + field("opp2Id","№ соперника 2","number") + field("pts2","Очки соперника 2","number");
+    if (aTab === "r") body = `<h3>Рейтинг на начало месяца</h3>` + field("rYear","Год","number",'value="2026"') +
+      `<label>Месяц<select id="rMonth">${mnames.map((m,i)=>`<option value="${i+1}">${m}</option>`).join("")}</select></label>` +
+      field("rPlace","Место в рейтинге","number") + field("rPts","Очки","number");
+    $("addForm").innerHTML = `<div class="frm">${body}</div><button type="submit" class="btnp">Сформировать</button>`;
+    if (aTab !== "r") {
+      const sync = () => {
+        const idx = $("fTour").value;
+        $("newTour").style.display = idx === "" ? "contents" : "none";
+      };
+      $("fTour").onchange = sync; sync();
+    }
+  }
+  function readTour() {
+    const idx = $("fTour").value;
+    const tours = aTab === "s" ? DATA.singles : (() => { const u = new Map(); DATA.doubles.forEach(m => u.set(m.tour.id + "|" + m.tour.name, m.tour)); return [...u.values()]; })();
+    if (idx !== "") return { known:true, t:tours[+idx] };
+    return { known:false, t:{ id:$("tId").value ? +$("tId").value : null, name:$("tName").value.trim(),
+             city:$("tCity").value.trim(), group:$("tGroup").value.trim(), cat:$("tCat").value.trim() } };
+  }
+  $("addForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const v = id => $(id) ? $(id).value.trim() : "";
+    let text = "", where = "";
+    if (aTab === "s") {
+      const { known, t } = readTour();
+      if (!v("date") || !v("opp")) return alert("Укажите хотя бы дату и соперника.");
+      const row = `[${J(v("opp"))}, ${numOrNull(v("oppId"))}, ${J(v("res"))}, ${J(v("score"))}, ${numOrNull(v("oppPts"))}, ${numOrNull(v("oppAge"))}, ${J(v("oppCity"))}, ${J(isoToRu(v("date")))}]`;
+      if (known) {
+        text = row + ",";
+        where = `Вставьте эту строку в data.js внутрь списка matches турнира «${t.name}» (блок в массиве singles), не забыв запятую между строками.`;
+      } else {
+        if (!t.name) return alert("Укажите название турнира.");
+        text = `{ id: ${t.id == null ? "null" : t.id}, name: ${J(t.name)}, city: ${J(t.city)}, group: ${J(t.group)}, cat: ${J(t.cat)}, matches: [\n  ${row}\n]},`;
+        where = "Новый турнир: вставьте весь блок в data.js в начало массива singles (после строки «singles: [»). Не забудьте также добавить турнир в toursYearSingles и history, когда он закончится.";
+      }
+    } else if (aTab === "d") {
+      const { known, t } = readTour();
+      if (!v("date") || !v("opp1") || !v("opp2")) return alert("Укажите дату и обоих соперников.");
+      if (!known && !t.name) return alert("Укажите название турнира.");
+      const tj = `{ id: ${t.id == null ? "null" : t.id}, name: ${J(t.name)}, city: ${J(t.city)}, group: ${J(t.group)}, cat: ${J(t.cat)} }`;
+      text = `{ tour: ${tj},\n  partner: ${J(v("partner"))}, partnerId: ${numOrNull(v("partnerId"))}, partnerPts: ${numOrNull(v("partnerPts"))},\n  opp1: ${J(v("opp1"))}, opp1Id: ${numOrNull(v("opp1Id"))}, opp2: ${J(v("opp2"))}, opp2Id: ${numOrNull(v("opp2Id"))},\n  res: ${J(v("res"))}, score: ${J(v("score"))}, pts1: ${numOrNull(v("pts1"))}, pts2: ${numOrNull(v("pts2"))}, date: ${J(isoToRu(v("date")))} },`;
+      where = "Вставьте этот блок в data.js в массив doubles (в начало или в конец, порядок не важен; запятая между блоками обязательна).";
+    } else {
+      if (!v("rPlace") || !v("rPts")) return alert("Укажите место и очки.");
+      text = `[${numOrNull(v("rPlace"))},${numOrNull(v("rPts"))}]`;
+      const y = v("rYear"), m = $("rMonth").value;
+      where = `Добавьте в конец списка vals для ${y} года (месяц ${mnames[m-1]}), через запятую после последнего значения. Если блока для ${y} года ещё нет, создайте: { year: ${y}, group: "до 15 лет", startMonth: ${m}, vals: [ ${text} ] }.`;
+    }
+    $("addText").value = text; $("addWhere").textContent = where; $("addOut").classList.remove("hide");
+  });
+  $("addCopy").onclick = () => {
+    const ta = $("addText"); ta.select();
+    (navigator.clipboard ? navigator.clipboard.writeText(ta.value) : Promise.reject()).catch(() => document.execCommand("copy"));
+    $("addCopy").textContent = "Скопировано"; setTimeout(() => $("addCopy").textContent = "Скопировать", 1500);
+  };
+  renderAdd();
+
+  $("foot").textContent = "Личный архив родителей. Данные скопированы из публичных результатов РТТ (через RTTStat) и пополняются вручную в файле data.js.";
+})();
+</script>
+</body>
+</html>
